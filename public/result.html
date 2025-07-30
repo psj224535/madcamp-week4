@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>최종 결과 - 슈뢰딩거 게임</title>
+    <title>결과 - 슈뢰딩거 게임</title>
     <style>
         body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center; background-color: #f0f2f5; }
         .container { background: white; padding: 3rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 500px; }
@@ -17,56 +17,71 @@
         #losersList { list-style: none; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
         #losersList li { background-color: #ffcdd2; padding: 0.5rem 1rem; border-radius: 20px; }
         #penalty { margin-top: 2rem; font-style: italic; color: #6c757d; font-size: 1.2rem; }
-        #message { color: #007bff; }
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Waiting Screen -->
+    <div id="waitingContainer" class="container" style="display: none;">
+        <h1>최종 선택 대기 중...</h1>
+        <p>호스트가 곧 결과를 결정합니다. 잠시만 기다려 주세요.</p>
+    </div>
+
+    <!-- Result Screen -->
+    <div id="resultContainer" class="container" style="display: none;">
         <h1>최종 결과</h1>
         <p id="question"></p>
         <div id="finalChoice"></div>
-        <div id="losersSection">
-            <h2>Losers</h2>
-            <ul id="losersList"></ul>
-        </div>
+        <div id="losersSection"></div>
         <div id="penalty"></div>
-        <p id="message"></p>
     </div>
+    
+    <p id="errorMessage" style="color: red;"></p>
 
     <script>
         window.onload = async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const sessionId = urlParams.get('session');
-            const messageEl = document.getElementById('message');
+            
+            const waitingContainer = document.getElementById('waitingContainer');
+            const resultContainer = document.getElementById('resultContainer');
+            const errorMessage = document.getElementById('errorMessage');
 
             if (!sessionId) {
-                messageEl.textContent = '세션 ID를 찾을 수 없습니다.';
+                errorMessage.textContent = '오류: 세션 ID를 찾을 수 없습니다.';
                 return;
             }
 
-            const response = await fetch(`/api/session/${sessionId}/result`);
-            const result = await response.json();
+            try {
+                const response = await fetch(`/api/session/${sessionId}/result`);
+                if (!response.ok) throw new Error('Failed to fetch results.');
+                
+                const result = await response.json();
 
-            if (!result.isFinalized) {
-                messageEl.textContent = '아직 호스트가 최종 선택을 하지 않았습니다. 잠시만 기다려 주세요...';
-                setTimeout(() => window.location.reload(), 3000);
-                return;
+                if (result.isFinalized) {
+                    // Show final results
+                    resultContainer.style.display = 'block';
+
+                    document.getElementById('question').textContent = `Q. ${result.question}`;
+                    
+                    const finalChoiceEl = document.getElementById('finalChoice');
+                    finalChoiceEl.innerHTML = `호스트의 최종 선택: <span class="choice-${result.finalChoice.toLowerCase()}">${result.finalChoice}</span>`;
+                    
+                    const losersSectionEl = document.getElementById('losersSection');
+                    losersSectionEl.innerHTML = result.losers.length > 0
+                        ? `<h2>Losers</h2><ul id="losersList">${result.losers.map(name => `<li>${name}</li>`).join('')}</ul>`
+                        : '<h2>🎉 No Losers! 🎉</h2>';
+
+                    document.getElementById('penalty').textContent = `벌칙: ${result.penalty}`;
+                } else {
+                    // Show waiting screen
+                    waitingContainer.style.display = 'block';
+                    setTimeout(() => window.location.reload(), 3000);
+                }
+
+            } catch (error) {
+                errorMessage.textContent = '오류: 결과를 불러오는 데 실패했습니다.';
+                console.error(error);
             }
-            
-            document.getElementById('question').textContent = `Q. ${result.question}`;
-            
-            const finalChoiceEl = document.getElementById('finalChoice');
-            const choice = result.finalChoice;
-            finalChoiceEl.innerHTML = `호스트의 최종 선택: <span class="choice-${choice.toLowerCase()}">${choice}</span>`;
-
-            const losersListEl = document.getElementById('losersList');
-            if (result.losers.length > 0) {
-                losersListEl.innerHTML = result.losers.map(name => `<li>${name}</li>`).join('');
-            } else {
-                document.getElementById('losersSection').innerHTML = '<h2>🎉 No Losers! 🎉</h2>';
-            }
-
-            document.getElementById('penalty').textContent = `벌칙: ${result.penalty}`;
         };
     </script>
 </body>
