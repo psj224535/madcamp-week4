@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schrödinger's Game</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; text-align: center;}
+        .container { padding: 2rem; border: 1px solid #ccc; border-radius: 8px; min-width: 300px; }
+        input { padding: 10px; font-size: 16px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin: 5px; }
+        .voteBtn { font-size: 24px; min-width: 80px; }
+    </style>
+</head>
+<body>
+    <div id="joinContainer" class="container">
+        <h1>Enter Your Nickname</h1>
+        <form id="joinForm">
+            <input type="text" id="nickname" placeholder="Nickname" required>
+            <button type="submit">Join</button>
+        </form>
+    </div>
+
+    <div id="voteContainer" class="container" style="display: none;">
+        <h2>Welcome, <b id="userNickname"></b>!</h2>
+        <p>Please cast your vote.</p>
+        <div>
+            <button class="voteBtn" data-vote="O">⭕</button>
+            <button class="voteBtn" data-vote="X">❌</button>
+        </div>
+    </div>
+
+    <p id="message"></p>
+
+    <script>
+        const joinContainer = document.getElementById('joinContainer');
+        const voteContainer = document.getElementById('voteContainer');
+        const message = document.getElementById('message');
+        const joinForm = document.getElementById('joinForm');
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session');
+        let currentUserNickname = '';
+
+        joinForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nicknameInput = document.getElementById('nickname');
+            currentUserNickname = nicknameInput.value;
+
+            if (!sessionId) {
+                message.textContent = 'Session ID not found in URL.';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/session/${sessionId}/join`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nickname: currentUserNickname })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    message.textContent = '';
+                    joinContainer.style.display = 'none';
+                    voteContainer.style.display = 'block';
+                    document.getElementById('userNickname').textContent = currentUserNickname;
+                } else {
+                    message.textContent = `Error: ${result.error}`;
+                }
+            } catch (error) {
+                message.textContent = 'An error occurred. Please try again.';
+            }
+        });
+
+        voteContainer.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('voteBtn')) {
+                const vote = e.target.dataset.vote;
+
+                try {
+                    const response = await fetch(`/api/session/${sessionId}/vote`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nickname: currentUserNickname, vote: vote })
+                    });
+                    
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        voteContainer.innerHTML = `<h1>Thank you!</h1><p>Your vote has been registered.</p><p>Waiting for results...</p>`;
+                        message.textContent = '';
+
+                        // Start checking for results
+                        const intervalId = setInterval(async () => {
+                            try {
+                                const res = await fetch(`/api/session/${sessionId}/result`);
+                                const resultData = await res.json();
+                                if (resultData.isFinished) {
+                                    clearInterval(intervalId);
+                                    window.location.href = `/result.html?session=${sessionId}`;
+                                }
+                            } catch (err) {
+                                console.error("Error checking session status:", err);
+                            }
+                        }, 3000);
+
+                    } else {
+                         message.textContent = `Error: ${result.error}`;
+                    }
+                } catch (error) {
+                    message.textContent = 'An error occurred while voting. Please try again.';
+                }
+            }
+        });
+    </script>
+</body>
+</html> 
