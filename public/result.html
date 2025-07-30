@@ -5,32 +5,133 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>최종 결과 - 슈뢰딩거 게임</title>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center; background-color: #f0f2f5; }
-        .container { background: white; padding: 3rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 500px; }
-        h1 { color: #333; }
-        #question { font-size: 1.5rem; font-weight: bold; margin: 1rem 0; color: #555; }
-        #finalChoice { margin: 2rem 0; font-size: 2rem; }
-        #finalChoice span { font-weight: bold; padding: 0.5rem 1rem; border-radius: 5px; color: white; }
-        .choice-o { background-color: #28a745; }
-        .choice-x { background-color: #dc3545; }
-        #losersSection h2 { color: #dc3545; }
-        #losersList { list-style: none; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
-        #losersList li { background-color: #ffcdd2; padding: 0.5rem 1rem; border-radius: 20px; }
-        #penalty { margin-top: 2rem; font-style: italic; color: #6c757d; font-size: 1.2rem; }
-        #message { color: #007bff; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            text-align: center; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+        }
+        .container { 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 3rem; 
+            border-radius: 16px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1); 
+            min-width: 300px;
+            max-width: 90vw;
+            backdrop-filter: blur(10px);
+        }
+        h1 { 
+            color: #333; 
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+        }
+        #question { 
+            font-size: 1.5rem; 
+            font-weight: bold; 
+            margin: 1.5rem 0; 
+            color: #555;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        #finalChoice { 
+            margin: 2rem 0; 
+            font-size: 2rem; 
+        }
+        #finalChoice span { 
+            font-weight: bold; 
+            padding: 1rem 2rem; 
+            border-radius: 12px; 
+            color: white;
+            font-size: 1.5rem;
+            display: inline-block;
+            margin: 10px;
+        }
+        .choice-o { 
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+        .choice-x { 
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+        #losersSection h2 { 
+            color: #dc3545; 
+            margin-top: 2rem;
+            font-size: 2rem;
+        }
+        #losersList { 
+            list-style: none; 
+            padding: 0; 
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            gap: 1rem; 
+            margin: 1rem 0;
+        }
+        #losersList li { 
+            background: linear-gradient(135deg, #ffcdd2 0%, #f8bbd9 100%);
+            padding: 0.8rem 1.5rem; 
+            border-radius: 25px;
+            font-weight: 600;
+            color: #c62828;
+            box-shadow: 0 2px 8px rgba(244, 67, 54, 0.2);
+        }
+        #penalty { 
+            margin-top: 2rem; 
+            font-style: italic; 
+            color: #6c757d; 
+            font-size: 1.3rem;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+        }
+        #message { 
+            color: #007bff; 
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .no-losers {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>최종 결과</h1>
-        <p id="question"></p>
+        <h1>🎯 최종 결과</h1>
+        <div id="question"></div>
         <div id="finalChoice"></div>
         <div id="losersSection">
-            <h2>Losers</h2>
+            <h2>😅 Losers</h2>
             <ul id="losersList"></ul>
         </div>
         <div id="penalty"></div>
-        <p id="message"></p>
+        <div id="message"></div>
     </div>
 
     <script>
@@ -44,29 +145,38 @@
                 return;
             }
 
-            const response = await fetch(`/api/session/${sessionId}/result`);
-            const result = await response.json();
+            try {
+                const response = await fetch(`/api/session/${sessionId}/result`);
+                const result = await response.json();
 
-            if (!result.isFinalized) {
-                messageEl.textContent = '아직 호스트가 최종 선택을 하지 않았습니다. 잠시만 기다려 주세요...';
-                setTimeout(() => window.location.reload(), 3000);
-                return;
+                if (!result.isFinalized) {
+                    messageEl.innerHTML = `
+                        <div class="loading"></div>
+                        아직 호스트가 최종 선택을 하지 않았습니다. 잠시만 기다려 주세요...
+                    `;
+                    setTimeout(() => window.location.reload(), 3000);
+                    return;
+                }
+                
+                document.getElementById('question').textContent = `Q. ${result.question}`;
+                
+                const finalChoiceEl = document.getElementById('finalChoice');
+                const choice = result.finalChoice;
+                finalChoiceEl.innerHTML = `호스트의 최종 선택: <span class="choice-${choice.toLowerCase()}">${choice}</span>`;
+
+                const losersListEl = document.getElementById('losersList');
+                if (result.losers.length > 0) {
+                    losersListEl.innerHTML = result.losers.map(name => `<li>${name}</li>`).join('');
+                } else {
+                    document.getElementById('losersSection').innerHTML = '<div class="no-losers">🎉 No Losers! 🎉</div>';
+                }
+
+                document.getElementById('penalty').textContent = `벌칙: ${result.penalty}`;
+                messageEl.textContent = '';
+            } catch (error) {
+                messageEl.textContent = '결과를 불러오는 중 오류가 발생했습니다.';
+                console.error('Error fetching result:', error);
             }
-            
-            document.getElementById('question').textContent = `Q. ${result.question}`;
-            
-            const finalChoiceEl = document.getElementById('finalChoice');
-            const choice = result.finalChoice;
-            finalChoiceEl.innerHTML = `호스트의 최종 선택: <span class="choice-${choice.toLowerCase()}">${choice}</span>`;
-
-            const losersListEl = document.getElementById('losersList');
-            if (result.losers.length > 0) {
-                losersListEl.innerHTML = result.losers.map(name => `<li>${name}</li>`).join('');
-            } else {
-                document.getElementById('losersSection').innerHTML = '<h2>🎉 No Losers! 🎉</h2>';
-            }
-
-            document.getElementById('penalty').textContent = `벌칙: ${result.penalty}`;
         };
     </script>
 </body>

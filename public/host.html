@@ -5,53 +5,188 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>호스트 대시보드 - 슈뢰딩거 게임</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 2rem; }
-        .container { display: flex; width: 100%; max-width: 1200px; gap: 2rem; }
-        .left-panel, .right-panel { flex: 1; }
-        .panel { background: #f9f9f9; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        h1, h2 { text-align: center; }
-        #sessionQuestion { text-align: center; font-size: 1.2rem; color: #333; margin-top: 0; margin-bottom: 1.5rem; }
-        #qrCodeContainer { text-align: center; }
-        #voteStatus { text-align: center; font-size: 1.5rem; margin: 2rem 0; }
-        #voterCount { font-weight: bold; color: #007bff; }
-        .action-button { background-color: #dc3545; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-top: 1rem; }
-        .action-button:hover { background-color: #c82333; }
-        #finalizeSection { text-align: center; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #eee; }
-        #finalizeSection button { font-size: 1.5rem; padding: 1rem 2rem; cursor: pointer; }
-        #finalizeSection button:disabled { background-color: #ccc; cursor: not-allowed; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 1rem; 
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container { 
+            display: flex; 
+            width: 100%; 
+            max-width: 1200px; 
+            gap: 2rem; 
+            flex-wrap: wrap;
+        }
+        .left-panel, .right-panel { 
+            flex: 1; 
+            min-width: 300px;
+        }
+        .panel { 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 1.5rem; 
+            border-radius: 16px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        h1, h2 { 
+            text-align: center; 
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        #sessionQuestion { 
+            text-align: center; 
+            font-size: 1.3rem; 
+            color: #555; 
+            margin-top: 0; 
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+        #qrCodeContainer { 
+            text-align: center; 
+        }
+        #qrCodeContainer img {
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        #voteStatus { 
+            text-align: center; 
+            font-size: 1.5rem; 
+            margin: 2rem 0; 
+        }
+        #voterCount { 
+            font-weight: bold; 
+            color: #667eea; 
+            font-size: 2rem;
+        }
+        .action-button { 
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%); 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            margin-top: 1rem; 
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .action-button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+        .finalize-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            font-size: 1.2rem;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 12px;
+        }
+        .finalize-btn:hover {
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+        #finalizeSection { 
+            text-align: center; 
+            margin-top: 2rem; 
+            padding-top: 2rem; 
+            border-top: 2px solid #eee; 
+        }
+        #finalizeSection button:disabled { 
+            background: #ccc; 
+            cursor: not-allowed; 
+            transform: none;
+        }
+        .qr-instruction {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            color: #666;
+            font-size: 14px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-active {
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .message {
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
     </style>
 </head>
 <body>
-    <h1>호스트 대시보드</h1>
+    <h1>🎮 호스트 대시보드</h1>
 
     <div class="container">
         <div class="left-panel panel">
-            <h2>게임 접속 QR 코드</h2>
+            <h2>📱 게임 접속 QR 코드</h2>
             <div id="qrCodeContainer">
                 <img id="qrCode" alt="QR Code" />
             </div>
-            <p style="text-align:center; margin-top:1rem;">참가자들에게 이 QR 코드를 보여주세요.</p>
+            <div class="qr-instruction">
+                <p><strong>📋 사용 방법:</strong></p>
+                <p>1. 참가자들이 이 QR 코드를 스캔합니다</p>
+                <p>2. 닉네임을 입력하고 참가합니다</p>
+                <p>3. O 또는 X를 선택하여 투표합니다</p>
+            </div>
         </div>
         <div class="right-panel panel">
-            <h2>실시간 투표 현황</h2>
+            <h2>📊 실시간 투표 현황</h2>
             <h3 id="sessionQuestion"></h3>
             <div id="voteStatus">
-                <p>현재 투표 완료 인원: <span id="voterCount">0</span>명</p>
-                <button id="endVoteEarlyBtn" class="action-button">투표 조기 종료</button>
+                <p>
+                    <span class="status-indicator status-active"></span>
+                    현재 투표 완료 인원: <span id="voterCount">0</span>명
+                </p>
+                <button id="endVoteEarlyBtn" class="action-button">⏰ 투표 조기 종료</button>
             </div>
             <div id="finalizeSection" style="display: none;">
-                <h2>투표가 마감되었습니다!</h2>
+                <h2>🎯 투표가 마감되었습니다!</h2>
                 <p>최종 선택을 하여 패자를 결정하세요.</p>
-                <button id="btnFinalizeO" data-choice="O">O를 최종 선택</button>
-                <button id="btnFinalizeX" data-choice="X">X를 최종 선택</button>
+                <button id="btnFinalizeO" class="finalize-btn" data-choice="O">⭕ O를 최종 선택</button>
+                <button id="btnFinalizeX" class="finalize-btn" data-choice="X">❌ X를 최종 선택</button>
             </div>
-            <p id="message" style="text-align:center;"></p>
+            <div id="message" class="message" style="display: none;"></div>
         </div>
     </div>
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get('session');
+
+        function showMessage(text, type = 'info') {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+        }
+
+        function hideMessage() {
+            document.getElementById('message').style.display = 'none';
+        }
 
         const updateVoteCount = (voters) => {
             const totalVotes = voters.O.length + voters.X.length;
@@ -60,7 +195,7 @@
         
         const checkStatus = async () => {
             if (!sessionId) {
-                document.body.innerHTML = '<h1>오류: 세션 ID를 찾을 수 없습니다.</h1>';
+                document.body.innerHTML = '<h1>❌ 오류: 세션 ID를 찾을 수 없습니다.</h1>';
                 return;
             }
             try {
@@ -78,15 +213,16 @@
                 if (result.isFinished) {
                     document.getElementById('voteStatus').style.display = 'none';
                     document.getElementById('finalizeSection').style.display = 'block';
-                    document.getElementById('message').textContent = '';
+                    hideMessage();
                 } else {
                     document.getElementById('voteStatus').style.display = 'block';
                     document.getElementById('finalizeSection').style.display = 'none';
-                    document.getElementById('message').textContent = '투표가 진행 중입니다...';
+                    showMessage('투표가 진행 중입니다...', 'info');
                 }
 
             } catch (error) {
                 console.error("Error checking session status:", error);
+                showMessage('서버 연결 오류가 발생했습니다.', 'error');
             }
         };
 
@@ -98,30 +234,50 @@
             setInterval(checkStatus, 2000); // Check every 2 seconds
 
             document.getElementById('endVoteEarlyBtn').addEventListener('click', async () => {
-                const btn = document.getElementById('endVoteEarlyBtn');
-                btn.disabled = true;
-                btn.textContent = '종료 중...';
-
-                await fetch(`/api/session/${sessionId}/end`, { method: 'POST' });
-                
-                // checkStatus will handle the UI update in the next interval
-            });
-
-            document.getElementById('finalizeSection').addEventListener('click', async (e) => {
-                if(e.target.tagName === 'BUTTON') {
-                    const choice = e.target.dataset.choice;
-                    e.target.disabled = true;
-                    e.target.textContent = '결정 중...';
-
-                    await fetch(`/api/session/${sessionId}/finalize`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ choice })
-                    });
-                    
-                    // The interval will handle the redirect
+                if (confirm('정말로 투표를 조기 종료하시겠습니까?')) {
+                    try {
+                        const response = await fetch(`/api/session/${sessionId}/end`, { method: 'POST' });
+                        if (response.ok) {
+                            showMessage('투표가 조기 종료되었습니다.', 'info');
+                            checkStatus(); // 즉시 상태 업데이트
+                        } else {
+                            showMessage('투표 종료 중 오류가 발생했습니다.', 'error');
+                        }
+                    } catch (error) {
+                        showMessage('네트워크 오류가 발생했습니다.', 'error');
+                    }
                 }
             });
+
+            document.getElementById('btnFinalizeO').addEventListener('click', async () => {
+                await finalizeChoice('O');
+            });
+
+            document.getElementById('btnFinalizeX').addEventListener('click', async () => {
+                await finalizeChoice('X');
+            });
+        };
+
+        const finalizeChoice = async (choice) => {
+            try {
+                const response = await fetch(`/api/session/${sessionId}/finalize`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ choice: choice })
+                });
+
+                if (response.ok) {
+                    showMessage(`${choice}를 최종 선택했습니다!`, 'info');
+                    setTimeout(() => {
+                        window.location.href = `/result.html?session=${sessionId}`;
+                    }, 2000);
+                } else {
+                    const result = await response.json();
+                    showMessage(`오류: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage('네트워크 오류가 발생했습니다.', 'error');
+            }
         };
     </script>
 </body>

@@ -10,6 +10,8 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
+app.use('/pages', express.static(path.join(__dirname, '../front/pages')));
+app.use('/assets', express.static(path.join(__dirname, '../front/assets')));
 
 const sessions = {};
 
@@ -207,8 +209,8 @@ app.get('/api/session/:id/result', (req, res) => {
     });
 });
 
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Server is running on http://10.249.56.27:${port}`);
 });
 
 process.on('uncaughtException', (err) => {

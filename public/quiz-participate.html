@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>퀴즈 참여</title>
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="../assets/css/argon-dashboard.css?v=2.1.0" rel="stylesheet" />
+  <style>
+    body {
+      background: linear-gradient(87deg, #11cdef 0, #1171ef 100%) !important;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .quiz-card {
+      background: white;
+      border-radius: 15px;
+      padding: 2rem;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      max-width: 400px;
+      width: 90%;
+    }
+    .vote-buttons {
+      display: flex;
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+    .vote-btn {
+      flex: 1;
+      padding: 1rem;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .vote-btn.o {
+      background: #28a745;
+      color: white;
+    }
+    .vote-btn.x {
+      background: #dc3545;
+      color: white;
+    }
+    .vote-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .vote-btn:hover:not(:disabled) {
+      transform: scale(1.05);
+    }
+    .results {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-top: 1rem;
+    }
+    .result-item {
+      display: flex;
+      justify-content: space-between;
+      margin: 0.5rem 0;
+    }
+    .penalty {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="quiz-card">
+    <h2 class="text-center mb-4">🎯 퀴즈</h2>
+    
+    <div class="question-section">
+      <h4>질문:</h4>
+      <p id="question-text" class="mb-3">로딩 중...</p>
+    </div>
+
+    <div class="vote-buttons">
+      <button class="vote-btn o" id="voteO" onclick="vote('O')">
+        <i class="fas fa-check"></i> O
+      </button>
+      <button class="vote-btn x" id="voteX" onclick="vote('X')">
+        <i class="fas fa-times"></i> X
+      </button>
+    </div>
+
+    <div class="results">
+      <h5>투표 결과</h5>
+      <div class="result-item">
+        <span>O (정답)</span>
+        <span id="o-count">0</span>
+      </div>
+      <div class="result-item">
+        <span>X (오답)</span>
+        <span id="x-count">0</span>
+      </div>
+    </div>
+
+    <div class="penalty">
+      <h5>벌칙</h5>
+      <p id="penalty-text">로딩 중...</p>
+    </div>
+  </div>
+
+  <script>
+    // URL 파라미터에서 퀴즈 정보 가져오기
+    const urlParams = new URLSearchParams(window.location.search);
+    const question = urlParams.get('question') || '샘플 질문입니다.';
+    const penalty = urlParams.get('penalty') || '샘플 벌칙입니다.';
+    
+    // 고유 키 생성 (질문+벌칙 조합)
+    const quizKey = 'quiz_' + btoa(unescape(encodeURIComponent(question + '|' + penalty)));
+    
+    // localStorage에서 투표 결과 불러오기
+    let oCount = 0;
+    let xCount = 0;
+    const saved = localStorage.getItem(quizKey);
+    if (saved) {
+      try {
+        const obj = JSON.parse(saved);
+        oCount = obj.o || 0;
+        xCount = obj.x || 0;
+      } catch {}
+    }
+    document.getElementById('o-count').textContent = oCount;
+    document.getElementById('x-count').textContent = xCount;
+    
+    // 페이지 로드 시 퀴즈 정보 표시
+    document.getElementById('question-text').textContent = question;
+    document.getElementById('penalty-text').textContent = penalty;
+    
+    function vote(choice) {
+      if (choice === 'O') {
+        oCount++;
+        document.getElementById('o-count').textContent = oCount;
+      } else {
+        xCount++;
+        document.getElementById('x-count').textContent = xCount;
+      }
+      // 저장
+      localStorage.setItem(quizKey, JSON.stringify({o: oCount, x: xCount}));
+      // 투표 버튼 비활성화
+      document.getElementById('voteO').disabled = true;
+      document.getElementById('voteX').disabled = true;
+      // 투표 완료 메시지
+      setTimeout(() => {
+        alert('투표가 완료되었습니다!');
+      }, 100);
+    }
+  </script>
+</body>
+</html> 
