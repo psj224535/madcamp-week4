@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>결과 - 슈뢰딩거 게임</title>
+    <title>최종 결과 - 슈뢰딩거 게임</title>
     <style>
-<<<<<<< HEAD
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
             display: flex; 
@@ -133,51 +132,16 @@
         </div>
         <div id="penalty"></div>
         <div id="message"></div>
-=======
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center; background-color: #f0f2f5; }
-        .container { background: white; padding: 3rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 500px; }
-        h1 { color: #333; }
-        #question { font-size: 1.5rem; font-weight: bold; margin: 1rem 0; color: #555; }
-        #finalChoice { margin: 2rem 0; font-size: 2rem; }
-        #finalChoice span { font-weight: bold; padding: 0.5rem 1rem; border-radius: 5px; color: white; }
-        .choice-o { background-color: #28a745; }
-        .choice-x { background-color: #dc3545; }
-        #losersSection h2 { color: #dc3545; }
-        #losersList { list-style: none; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
-        #losersList li { background-color: #ffcdd2; padding: 0.5rem 1rem; border-radius: 20px; }
-        #penalty { margin-top: 2rem; font-style: italic; color: #6c757d; font-size: 1.2rem; }
-    </style>
-</head>
-<body>
-    <!-- Waiting Screen -->
-    <div id="waitingContainer" class="container" style="display: none;">
-        <h1>최종 선택 대기 중...</h1>
-        <p>호스트가 곧 결과를 결정합니다. 잠시만 기다려 주세요.</p>
     </div>
-
-    <!-- Result Screen -->
-    <div id="resultContainer" class="container" style="display: none;">
-        <h1>최종 결과</h1>
-        <p id="question"></p>
-        <div id="finalChoice"></div>
-        <div id="losersSection"></div>
-        <div id="penalty"></div>
->>>>>>> 2b66dde5df0645e9d22f401b7668c02c4dca1772
-    </div>
-    
-    <p id="errorMessage" style="color: red;"></p>
 
     <script>
         window.onload = async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const sessionId = urlParams.get('session');
-            
-            const waitingContainer = document.getElementById('waitingContainer');
-            const resultContainer = document.getElementById('resultContainer');
-            const errorMessage = document.getElementById('errorMessage');
+            const messageEl = document.getElementById('message');
 
             if (!sessionId) {
-                errorMessage.textContent = '오류: 세션 ID를 찾을 수 없습니다.';
+                messageEl.textContent = '세션 ID를 찾을 수 없습니다.';
                 return;
             }
 

@@ -199,7 +199,8 @@
                     showMessage(`오류: ${result.error}`);
                 }
             } catch (error) {
-                showMessage('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
+                console.error('Network error:', error);
+                showMessage(`네트워크 오류가 발생했습니다. 다시 시도해주세요. (세션ID: ${sessionId || '없음'})`);
             }
         });
 
