@@ -135,7 +135,6 @@ app.post('/api/session/:id/next', (req, res) => {
     // Reset for the new question
     session.gameState = 'voting';
     session.deadline = new Date(Date.now() + session.voteDuration * 1000);
-    session.finalChoice = null;
 
     // Reset participants' vote status for the new question
     const currentQuestion = session.questions[session.currentQuestionIndex];
@@ -191,24 +190,46 @@ app.post('/api/session/:id/vote', (req, res) => {
 
 // 5. NEW: 호스트가 최종 결과를 결정
 app.post('/api/session/:id/finalize', (req, res) => {
-    const { id } = req.params;
-    const { choice } = req.body;
-    const session = sessions[id];
+    try {
+        const { id } = req.params;
+        const { choice } = req.body;
+        const session = sessions[id];
 
-    if (!session) {
-        return res.status(404).json({ error: 'Session not found.' });
-    }
-    if (new Date() < session.deadline) {
-        return res.status(403).json({ error: 'Voting has not ended yet.' });
-    }
-     if (!choice || (choice !== 'O' && choice !== 'X')) {
-        return res.status(400).json({ error: 'Invalid choice. Must be O or X.' });
-    }
+        if (!session) {
+            return res.status(404).json({ error: 'Session not found.' });
+        }
+        
+        const currentQuestion = session.questions[session.currentQuestionIndex];
+        if (!currentQuestion) {
+            return res.status(404).json({ error: 'Current question not found.'});
+        }
+        
+        if (new Date() < session.deadline) {
+            return res.status(403).json({ error: 'Voting has not ended yet.' });
+        }
+        if (!choice || (choice !== 'O' && choice !== 'X')) {
+            return res.status(400).json({ error: 'Invalid choice. Must be O or X.' });
+        }
 
-    session.finalChoice = choice;
-    session.gameState = 'result'; // Update game state
-    console.log(`[Session: ${id}] Host finalized the result to '${choice}'.`);
-    res.status(200).json({ message: 'Session finalized successfully.' });
+        currentQuestion.finalChoice = choice;
+        session.gameState = 'result'; // Update game state
+        
+        // Calculate and store losers for this question
+        const voters = currentQuestion.votes;
+        const voterList = { O: [], X: [] };
+        Object.entries(voters).forEach(([nickname, vote]) => {
+            if (vote === 'O') voterList.O.push(nickname);
+            else if (vote === 'X') voterList.X.push(nickname);
+        });
+        currentQuestion.losers = (choice === 'O') ? voterList.X : voterList.O;
+
+        console.log(`[Session: ${id}] Host finalized result for Q#${session.currentQuestionIndex} to '${choice}'. Losers: ${currentQuestion.losers.join(', ')}`);
+        res.status(200).json({ message: 'Session finalized successfully.' });
+
+    } catch (error) {
+        console.error(`[FINALIZE ERROR] Session ID: ${req.params.id}, Error:`, error);
+        res.status(500).json({ error: 'An unexpected server error occurred during finalization.' });
+    }
 });
 
 // NEW: 호스트가 투표를 조기 종료
@@ -235,13 +256,18 @@ app.get('/api/session/:id/result', (req, res) => {
         return res.status(404).json({ error: 'Session not found.' });
     }
 
-    const isFinished = session.deadline ? new Date() >= session.deadline : false;
-    const isFinalized = !!session.finalChoice;
+    // Automatically transition from voting to result when time is up
+    if (session.gameState === 'voting' && session.deadline && new Date() >= session.deadline) {
+        session.gameState = 'result';
+        console.log(`[Session: ${id}] Voting time ended for Q#${session.currentQuestionIndex}. State is now 'result'.`);
+    }
+
+    const currentQuestion = session.questions[session.currentQuestionIndex];
+
+    const isFinalized = !!(currentQuestion && currentQuestion.finalChoice);
     
     // This part needs significant changes for multi-question format.
     // For now, let's return the general session state.
-    const currentQuestion = session.questions[session.currentQuestionIndex];
-
     const voters = currentQuestion ? currentQuestion.votes : {};
     const voterList = { O: [], X: [] };
      Object.entries(voters).forEach(([nickname, vote]) => {
@@ -255,13 +281,13 @@ app.get('/api/session/:id/result', (req, res) => {
 
     res.status(200).json({
         // OLD fields for compatibility for now
-        isFinished: isFinished,
+        isFinished: session.deadline ? new Date() >= session.deadline : false,
         isFinalized: isFinalized,
         question: currentQuestion ? currentQuestion.question : "대기 중...",
         penalty: currentQuestion ? currentQuestion.penalty : "",
         voters: voterList,
-        finalChoice: session.finalChoice,
-        losers: [],
+        finalChoice: currentQuestion ? currentQuestion.finalChoice : null,
+        losers: currentQuestion && currentQuestion.losers ? currentQuestion.losers : [],
 
         // NEW fields
         title: session.title,
@@ -271,6 +297,36 @@ app.get('/api/session/:id/result', (req, res) => {
         participants: Object.keys(session.participants)
     });
 });
+
+// NEW: Get final game summary
+app.get('/api/session/:id/summary', (req, res) => {
+    const { id } = req.params;
+    const session = sessions[id];
+
+    if (!session) {
+        return res.status(404).json({ error: 'Session not found.' });
+    }
+
+    const loserCounts = {};
+    // Initialize all participants with 0 losses
+    Object.keys(session.participants).forEach(p => loserCounts[p] = 0);
+
+    session.questions.forEach(q => {
+        if (q.losers && q.losers.length > 0) {
+            q.losers.forEach(loser => {
+                if (loserCounts[loser] !== undefined) {
+                    loserCounts[loser]++;
+                }
+            });
+        }
+    });
+
+    res.status(200).json({
+        title: session.title,
+        results: loserCounts
+    });
+});
+
 
 app.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on http://10.249.56.27:${port}`);

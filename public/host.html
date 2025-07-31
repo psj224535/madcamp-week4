@@ -72,17 +72,7 @@
         <h2 id="questionHeader"></h2>
         <p id="currentQuestion" class="question-display"></p>
         <div id="timer" class="timer-display"></div>
-        <h3>실시간 투표 현황 (<span id="voteCount">0</span>명)</h3>
-        <div class="voter-columns">
-            <div>
-                <h3>⭕ O</h3>
-                <ul id="oVoters"></ul>
-            </div>
-            <div>
-                <h3>❌ X</h3>
-                <ul id="xVoters"></ul>
-            </div>
-        </div>
+        <h3>실시간 투표 현황: <span id="voteCount">0</span>명 완료</h3>
         <div class="button-group">
             <button id="endVoteEarlyBtn" class="action-button end-early-btn">⏰ 투표 조기 종료</button>
         </div>
@@ -112,9 +102,10 @@
         <div id="nextQuestionSection" style="display: none;">
              <h3>벌칙: <span id="penaltyText"></span></h3>
              <p><b id="loserCount">0</b>명의 패자가 결정되었습니다.</p>
+             <ul id="loserList" class="participants-list" style="margin-top: 1rem;"></ul>
              <div class="button-group">
                 <button id="nextQuestionBtn" class="action-button">➡️ 다음 질문으로</button>
-             </div>
+            </div>
         </div>
     </div>
     
@@ -165,6 +156,7 @@
             nextQuestionSection: document.getElementById('nextQuestionSection'),
             penaltyText: document.getElementById('penaltyText'),
             loserCount: document.getElementById('loserCount'),
+            loserList: document.getElementById('loserList'),
             nextQuestionBtn: document.getElementById('nextQuestionBtn'),
         };
 
@@ -201,8 +193,6 @@
             const oVoterList = voters.O || [];
             const xVoterList = voters.X || [];
             DOMElements.voteCount.textContent = oVoterList.length + xVoterList.length;
-            DOMElements.oVoters.innerHTML = oVoterList.map(v => `<li>${v}</li>`).join('');
-            DOMElements.xVoters.innerHTML = xVoterList.map(v => `<li>${v}</li>`).join('');
         }
 
         async function updateTimer() {
@@ -264,18 +254,25 @@
                 if (data.isFinalized) {
                     DOMElements.finalizeSection.style.display = 'none';
                     DOMElements.nextQuestionSection.style.display = 'block';
-                    const losers = data.finalChoice === 'O' ? xVoters : oVoters;
+                    const losers = data.losers || [];
                     DOMElements.penaltyText.textContent = penalty;
                     DOMElements.loserCount.textContent = losers.length;
+                    DOMElements.loserList.innerHTML = losers.map(l => `<li>${l}</li>`).join('');
 
                     if (qIndex + 1 >= data.totalQuestions) {
                          DOMElements.nextQuestionBtn.textContent = '🏆 최종 결과 보기';
+                         DOMElements.nextQuestionBtn.onclick = () => {
+                             window.location.href = `/result.html?session=${sessionId}`;
+                         };
                     } else {
                         DOMElements.nextQuestionBtn.textContent = `➡️ 다음 질문으로 (${qIndex + 2}/${data.totalQuestions})`;
+                        DOMElements.nextQuestionBtn.onclick = () => apiCall('next', 'POST').then(updateStatus);
                     }
                 } else {
                     DOMElements.finalizeSection.style.display = 'block';
                     DOMElements.nextQuestionSection.style.display = 'none';
+                    // Re-enable buttons every time this section is displayed for a new question
+                    DOMElements.finalizeSection.querySelectorAll('.finalize-btn').forEach(btn => btn.disabled = false);
                 }
 
             } else if (data.gameState === 'finished') {
@@ -293,17 +290,25 @@
             
             DOMElements.startGameBtn.addEventListener('click', () => apiCall('next', 'POST').then(updateStatus));
             DOMElements.endVoteEarlyBtn.addEventListener('click', () => apiCall('end', 'POST').then(updateStatus));
-            DOMElements.nextQuestionBtn.addEventListener('click', () => apiCall('next', 'POST').then(updateStatus));
             
             DOMElements.finalizeSection.addEventListener('click', (e) => {
                 if (e.target.classList.contains('finalize-btn')) {
                     const choice = e.target.dataset.choice;
-                    apiCall('finalize', 'POST', { choice }).then(updateStatus);
+                    // Disable buttons immediately to prevent spam
+                    DOMElements.finalizeSection.querySelectorAll('.finalize-btn').forEach(btn => btn.disabled = true);
+                    apiCall('finalize', 'POST', { choice }).then(result => {
+                        if(result) {
+                            updateStatus(); // Immediately update UI on success
+                        } else {
+                            // Re-enable buttons if API call fails
+                            DOMElements.finalizeSection.querySelectorAll('.finalize-btn').forEach(btn => btn.disabled = false);
+                        }
+                    });
                 }
             });
 
             updateStatus();
-            statusInterval = setInterval(updateStatus, 1500);
+            statusInterval = setInterval(updateStatus, 1000);
         };
     </script>
 </body>

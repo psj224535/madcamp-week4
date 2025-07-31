@@ -203,7 +203,7 @@
             if (result) {
                 DOMElements.userNickname.textContent = currentUserNickname;
                 showContainer('waitingContainer');
-                statusInterval = setInterval(updateStatus, 1500);
+                statusInterval = setInterval(updateStatus, 1000);
             }
         });
 
@@ -217,6 +217,7 @@
                 const result = await apiCall('vote', 'POST', { nickname: currentUserNickname, vote });
                 if (result) {
                     showContainer('votedContainer');
+                    updateStatus(); // Immediately update status for other clients
                 } else {
                     DOMElements.voteButtons.forEach(btn => btn.disabled = false);
                     e.target.closest('.voteBtn').innerHTML = vote === 'O' ? '⭕ O' : '❌ X';
