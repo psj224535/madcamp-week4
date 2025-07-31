@@ -7,260 +7,228 @@
     <style>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            flex-direction: column; 
-            text-align: center;
-            margin: 0;
-            padding: 20px;
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; flex-direction: column; text-align: center;
+            margin: 0; padding: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
         .container { 
             background: rgba(255, 255, 255, 0.95);
-            padding: 2rem; 
-            border-radius: 16px; 
-            min-width: 300px;
-            max-width: 90vw;
+            padding: 2rem; border-radius: 16px; 
+            min-width: 300px; max-width: 90vw;
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
             color: #333;
         }
-        input { 
-            padding: 15px; 
-            font-size: 16px; 
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
-            width: 100%;
-            box-sizing: border-box;
-            margin-bottom: 15px;
-            transition: border-color 0.3s;
+        /* Hide all containers by default */
+        #joinContainer, #waitingContainer, #voteContainer, #votedContainer, #finishedContainer {
+            display: none;
         }
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        button { 
-            padding: 15px 30px; 
-            font-size: 16px; 
-            cursor: pointer; 
-            margin: 8px; 
-            border: none;
-            border-radius: 8px;
-            transition: all 0.3s;
-            font-weight: 600;
-        }
-        .join-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .join-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-        .voteBtn { 
-            font-size: 32px; 
-            min-width: 100px; 
-            min-height: 100px;
-            border-radius: 16px;
-            margin: 10px;
-            transition: all 0.3s;
-        }
-        .voteBtn:hover {
-            transform: scale(1.05);
-        }
-        .vote-o {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-        }
-        .vote-x {
-            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
-            color: white;
-        }
-        h1, h2 {
-            margin-bottom: 1.5rem;
-            color: #333;
-        }
-        .welcome-text {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            color: #666;
-        }
-        .vote-container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        .message {
-            margin-top: 1rem;
-            padding: 10px;
-            border-radius: 8px;
-            font-weight: 500;
-        }
-        .message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
+        h1, h2 { margin-bottom: 1.5rem; color: #333; }
+        p { color: #666; font-size: 1.1rem; line-height: 1.6; }
         .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+            display: inline-block; width: 40px; height: 40px;
+            border: 4px solid #f3f3f3; border-top: 4px solid #667eea;
+            border-radius: 50%; animation: spin 1s linear infinite; margin-top: 1rem;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Form Styles */
+        input { 
+            padding: 15px; font-size: 16px; border: 2px solid #e1e5e9;
+            border-radius: 8px; width: 100%; box-sizing: border-box;
+            margin-bottom: 15px; transition: border-color 0.3s;
         }
+        input:focus { outline: none; border-color: #667eea; }
+        
+        /* Button Styles */
+        .btn {
+            padding: 15px 30px; font-size: 16px; cursor: pointer; margin: 8px; 
+            border: none; border-radius: 8px; transition: all 0.3s;
+            font-weight: 600; color: white;
+        }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+        .voteBtn { 
+            font-size: 32px; min-width: 100px; min-height: 100px;
+            border-radius: 16px; flex: 1;
+        }
+        .voteBtn:hover:not(:disabled) { transform: scale(1.05); }
+        .vote-o { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+        .vote-x { background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%); }
+        .voteBtn:disabled .loading { width: 20px; height: 20px; }
+        .vote-buttons { display: flex; gap: 20px; justify-content: center; }
+
+        /* Message Styles */
+        .message {
+            margin-top: 1rem; padding: 10px; border-radius: 8px;
+            font-weight: 500; display: none;
+        }
+        .message.error { background: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
-    <div id="joinContainer" class="container">
-        <h1>🎮 슈뢰딩거 게임</h1>
-        <p class="welcome-text">닉네임을 입력하고 게임에 참가하세요!</p>
-        <form id="joinForm">
-            <input type="text" id="nickname" placeholder="닉네임을 입력하세요" required maxlength="20">
-            <button type="submit" class="join-btn">참가하기</button>
-        </form>
-    </div>
+    <div id="mainContainer">
+        <div id="joinContainer" class="container">
+            <h1>🎮 슈뢰딩거 게임</h1>
+            <p>닉네임을 입력하고 게임에 참가하세요!</p>
+            <form id="joinForm">
+                <input type="text" id="nickname" placeholder="닉네임을 입력하세요" required maxlength="20">
+                <button type="submit" class="btn btn-primary">참가하기</button>
+            </form>
+        </div>
 
-    <div id="voteContainer" class="container" style="display: none;">
-        <h2>안녕하세요, <b id="userNickname"></b>님! 👋</h2>
-        <p class="welcome-text">투표를 진행해주세요</p>
-        <div class="vote-container">
-            <button class="voteBtn vote-o" data-vote="O">⭕ O</button>
-            <button class="voteBtn vote-x" data-vote="X">❌ X</button>
+        <div id="waitingContainer" class="container">
+            <h2><b id="userNickname"></b>님, 환영합니다! 👋</h2>
+            <p>호스트가 게임을 시작할 때까지 잠시만 기다려주세요...</p>
+            <div class="loading"></div>
+        </div>
+
+        <div id="voteContainer" class="container">
+            <h2 id="questionHeader"></h2>
+            <p id="questionDisplay"></p>
+            <div class="vote-buttons">
+                <button class="btn voteBtn vote-o" data-vote="O">⭕ O</button>
+                <button class="btn voteBtn vote-x" data-vote="X">❌ X</button>
+            </div>
+        </div>
+
+        <div id="votedContainer" class="container">
+            <h2>✔️ 투표 완료!</h2>
+            <p>다른 참가자들이 투표를 마칠 때까지 기다려주세요.</p>
+            <div class="loading"></div>
+        </div>
+        
+        <div id="finishedContainer" class="container">
+            <h2>🎉 게임 종료</h2>
+            <p>모든 게임이 종료되었습니다. 참여해주셔서 감사합니다!</p>
         </div>
     </div>
-
-    <div id="message" class="message" style="display: none;"></div>
+    <div id="message" class="message"></div>
 
     <script>
-        const joinContainer = document.getElementById('joinContainer');
-        const voteContainer = document.getElementById('voteContainer');
-        const message = document.getElementById('message');
-        const joinForm = document.getElementById('joinForm');
-        
+        const DOMElements = {
+            main: document.getElementById('mainContainer'),
+            message: document.getElementById('message'),
+            joinContainer: document.getElementById('joinContainer'),
+            waitingContainer: document.getElementById('waitingContainer'),
+            voteContainer: document.getElementById('voteContainer'),
+            votedContainer: document.getElementById('votedContainer'),
+            finishedContainer: document.getElementById('finishedContainer'),
+            userNickname: document.getElementById('userNickname'),
+            questionHeader: document.getElementById('questionHeader'),
+            questionDisplay: document.getElementById('questionDisplay'),
+            voteButtons: document.querySelectorAll('.voteBtn'),
+        };
+
         const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get('session');
         let currentUserNickname = '';
+        let currentQuestionIndex = -1;
+        let statusInterval;
 
-        function showMessage(text, type = 'error') {
-            message.textContent = text;
-            message.className = `message ${type}`;
-            message.style.display = 'block';
+        function showMessage(text) {
+            DOMElements.message.textContent = text;
+            DOMElements.message.className = 'message error';
+            DOMElements.message.style.display = 'block';
+        }
+        
+        function showContainer(containerId) {
+            ['joinContainer', 'waitingContainer', 'voteContainer', 'votedContainer', 'finishedContainer'].forEach(id => {
+                DOMElements[id].style.display = 'none';
+            });
+            DOMElements[containerId].style.display = 'block';
         }
 
-        function hideMessage() {
-            message.style.display = 'none';
+        async function apiCall(endpoint, method = 'POST', body = null) {
+            try {
+                const options = { method, headers: { 'Content-Type': 'application/json' } };
+                if (body) options.body = JSON.stringify(body);
+                const response = await fetch(`/api/session/${sessionId}/${endpoint}`, options);
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'API 요청 실패');
+                return result;
+            } catch (error) {
+                showMessage(error.message);
+                return null;
+            }
+        }
+        
+        async function updateStatus() {
+            const data = await apiCall('result', 'GET');
+            if (!data) return;
+
+            if (currentQuestionIndex !== data.currentQuestionIndex) {
+                 DOMElements.voteButtons.forEach(btn => {
+                    btn.disabled = false;
+                    const vote = btn.dataset.vote;
+                    btn.innerHTML = vote === 'O' ? '⭕ O' : '❌ X';
+                });
+            }
+            currentQuestionIndex = data.currentQuestionIndex;
+
+            switch (data.gameState) {
+                case 'waiting':
+                    showContainer('waitingContainer');
+                    break;
+                case 'voting':
+                    const myVote = data.voters.O.includes(currentUserNickname) || data.voters.X.includes(currentUserNickname);
+                    if (myVote) {
+                        showContainer('votedContainer');
+                    } else {
+                        showContainer('voteContainer');
+                        DOMElements.questionHeader.textContent = `질문 ${data.currentQuestionIndex + 1}/${data.totalQuestions}`;
+                        DOMElements.questionDisplay.textContent = data.question;
+                    }
+                    break;
+                case 'result':
+                    showContainer('votedContainer'); // Show waiting message during result display on host
+                    break;
+                case 'finished':
+                    showContainer('finishedContainer');
+                    clearInterval(statusInterval);
+                    break;
+            }
         }
 
-        joinForm.addEventListener('submit', async (e) => {
+        document.getElementById('joinForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const nicknameInput = document.getElementById('nickname');
             currentUserNickname = nicknameInput.value.trim();
-
             if (!currentUserNickname) {
                 showMessage('닉네임을 입력해주세요.');
                 return;
             }
-
-            if (!sessionId) {
-                showMessage('세션 ID를 찾을 수 없습니다.');
-                return;
+            const result = await apiCall('join', 'POST', { nickname: currentUserNickname });
+            if (result) {
+                DOMElements.userNickname.textContent = currentUserNickname;
+                showContainer('waitingContainer');
+                statusInterval = setInterval(updateStatus, 1500);
             }
+        });
 
-            try {
-                const response = await fetch(`/api/session/${sessionId}/join`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nickname: currentUserNickname })
-                });
+        DOMElements.voteButtons.forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const vote = e.target.closest('.voteBtn').dataset.vote;
+                
+                DOMElements.voteButtons.forEach(btn => btn.disabled = true);
+                e.target.closest('.voteBtn').innerHTML = '<div class="loading"></div>';
 
-                const result = await response.json();
-
-                if (response.ok) {
-                    hideMessage();
-                    joinContainer.style.display = 'none';
-                    voteContainer.style.display = 'block';
-                    document.getElementById('userNickname').textContent = currentUserNickname;
+                const result = await apiCall('vote', 'POST', { nickname: currentUserNickname, vote });
+                if (result) {
+                    showContainer('votedContainer');
                 } else {
-                    showMessage(`오류: ${result.error}`);
+                    DOMElements.voteButtons.forEach(btn => btn.disabled = false);
+                    e.target.closest('.voteBtn').innerHTML = vote === 'O' ? '⭕ O' : '❌ X';
                 }
-            } catch (error) {
-                console.error('Network error:', error);
-                showMessage(`네트워크 오류가 발생했습니다. 다시 시도해주세요. (세션ID: ${sessionId || '없음'})`);
-            }
+            });
         });
 
-        voteContainer.addEventListener('click', async (e) => {
-            if (e.target.classList.contains('voteBtn')) {
-                const vote = e.target.dataset.vote;
-                
-                // 버튼 비활성화
-                const buttons = document.querySelectorAll('.voteBtn');
-                buttons.forEach(btn => btn.disabled = true);
-                
-                // 로딩 표시
-                e.target.innerHTML = '<div class="loading"></div>';
-
-                try {
-                    const response = await fetch(`/api/session/${sessionId}/vote`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ nickname: currentUserNickname, vote: vote })
-                    });
-                    
-                    const result = await response.json();
-
-                    if (response.ok) {
-                        voteContainer.innerHTML = `
-                            <h1>🎉 투표 완료!</h1>
-                            <p>투표가 성공적으로 등록되었습니다.</p>
-                            <p>결과를 기다리는 중...</p>
-                            <div class="loading"></div>
-                        `;
-                        hideMessage();
-
-                        // 결과 확인
-                        const intervalId = setInterval(async () => {
-                            try {
-                                const res = await fetch(`/api/session/${sessionId}/result`);
-                                const resultData = await res.json();
-                                if (resultData.isFinished) {
-                                    clearInterval(intervalId);
-                                    window.location.href = `/result.html?session=${sessionId}`;
-                                }
-                            } catch (err) {
-                                console.error("Error checking session status:", err);
-                            }
-                        }, 3000);
-
-                    } else {
-                        showMessage(`오류: ${result.error}`);
-                        // 버튼 다시 활성화
-                        buttons.forEach(btn => btn.disabled = false);
-                        e.target.innerHTML = vote === 'O' ? '⭕ O' : '❌ X';
-                    }
-                } catch (error) {
-                    showMessage('투표 중 오류가 발생했습니다. 다시 시도해주세요.');
-                    // 버튼 다시 활성화
-                    buttons.forEach(btn => btn.disabled = false);
-                    e.target.innerHTML = vote === 'O' ? '⭕ O' : '❌ X';
-                }
-            }
-        });
+        if (!sessionId) {
+            document.body.innerHTML = '<h1>❌ 오류: 세션 ID를 찾을 수 없습니다.</h1>';
+        } else {
+            showContainer('joinContainer');
+        }
     </script>
 </body>
 </html> 

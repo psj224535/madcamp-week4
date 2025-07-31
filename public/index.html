@@ -21,8 +21,8 @@
             padding: 2.5rem; 
             border-radius: 16px; 
             box-shadow: 0 8px 32px rgba(0,0,0,0.1); 
-            min-width: 300px;
-            max-width: 90vw;
+            width: 100%;
+            max-width: 600px;
             backdrop-filter: blur(10px);
         }
         h1 { 
@@ -41,7 +41,7 @@
             font-weight: 600;
             color: #555;
         }
-        input[type="text"], input[type="datetime-local"] { 
+        input[type="text"], input[type="number"] { 
             width: 100%; 
             padding: 15px; 
             font-size: 16px; 
@@ -66,9 +66,42 @@
             font-weight: 600;
             transition: all 0.3s;
         }
-        button:hover { 
+        button:hover:not(:disabled) { 
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .question-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .question-item input {
+            flex: 1;
+        }
+        .remove-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+            cursor: pointer;
+            line-height: 30px;
+            text-align: center;
+            padding: 0;
+            flex-shrink: 0;
+        }
+        #add-question-btn {
+            background: #28a745;
+            width: auto;
+            padding: 10px 20px;
+            margin-top: 10px;
         }
         #message { 
             margin-top: 1rem; 
@@ -79,21 +112,12 @@
             border: 1px solid #f5c6cb;
             font-weight: 500;
         }
-        .game-description {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 2rem;
-            color: #666;
-            font-size: 14px;
-            line-height: 1.5;
-        }
         .loading {
             display: inline-block;
             width: 20px;
             height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid #fff;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -107,55 +131,88 @@
     <div class="container">
         <h1>🎮 슈뢰딩거 게임 생성</h1>
         
-        <div class="game-description">
-            <p><strong>📋 게임 설명:</strong></p>
-            <p>1. 질문과 벌칙을 설정합니다</p>
-            <p>2. 마감 시간을 정합니다</p>
-            <p>3. QR 코드를 생성하여 참가자들에게 공유합니다</p>
-            <p>4. 참가자들이 O/X로 투표합니다</p>
-            <p>5. 마감 후 호스트가 최종 선택하여 패자를 결정합니다</p>
-        </div>
-        
-        <form id="createForm">
+        <form id="createGameForm">
             <div class="form-group">
-                <label for="question">❓ 질문</label>
-                <input type="text" id="question" placeholder="예: 오늘 저녁은 치킨일까?" required maxlength="100">
+                <label for="gameTitle">📝 방 제목</label>
+                <input type="text" id="gameTitle" placeholder="예: 2024년 워크샵" required maxlength="50">
             </div>
+
             <div class="form-group">
-                <label for="penalty">🎯 벌칙</label>
-                <input type="text" id="penalty" placeholder="예: 커피 사기" required maxlength="50">
+                <label for="voteDuration">⏱️ 질문당 투표 시간 (초)</label>
+                <input type="number" id="voteDuration" value="30" required min="5" max="300">
             </div>
+
             <div class="form-group">
-                <label for="deadline">⏰ 마감 시간</label>
-                <input type="datetime-local" id="deadline" required>
+                <label>❓ 질문 리스트</label>
+                <div id="questionsContainer">
+                    <div class="question-item">
+                        <input type="text" class="question" placeholder="질문" required>
+                        <input type="text" class="penalty" placeholder="벌칙" required>
+                        <button type="button" class="remove-btn" style="display:none;">×</button>
+                    </div>
+                </div>
+                <button type="button" id="add-question-btn">+ 질문 추가</button>
             </div>
-            <button type="submit" id="submitBtn">세션 생성 & QR 코드 보기</button>
+            
+            <button type="submit" id="submitBtn">게임 방 생성하기</button>
         </form>
         <div id="message" style="display: none;"></div>
     </div>
 
     <script>
-        // 현재 시간으로부터 10분 후를 기본값으로 설정
-        const now = new Date();
-        now.setMinutes(now.getMinutes() + 10);
-        const defaultDeadline = now.toISOString().slice(0, 16);
-        document.getElementById('deadline').value = defaultDeadline;
+        document.getElementById('add-question-btn').addEventListener('click', () => {
+            const container = document.getElementById('questionsContainer');
+            const newItem = document.createElement('div');
+            newItem.className = 'question-item';
+            newItem.innerHTML = `
+                <input type="text" class="question" placeholder="질문" required>
+                <input type="text" class="penalty" placeholder="벌칙" required>
+                <button type="button" class="remove-btn">×</button>
+            `;
+            container.appendChild(newItem);
+            updateRemoveButtons();
+        });
 
-        document.getElementById('createForm').addEventListener('submit', async (e) => {
+        function updateRemoveButtons() {
+            const removeButtons = document.querySelectorAll('.remove-btn');
+            removeButtons.forEach(btn => {
+                btn.style.display = removeButtons.length > 1 ? 'inline-block' : 'none';
+                btn.onclick = (e) => {
+                    if (removeButtons.length > 1) {
+                        e.target.closest('.question-item').remove();
+                        updateRemoveButtons();
+                    }
+                };
+            });
+        }
+        
+        updateRemoveButtons();
+
+        document.getElementById('createGameForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const submitBtn = document.getElementById('submitBtn');
-            const originalText = submitBtn.textContent;
             submitBtn.innerHTML = '<div class="loading"></div> 생성 중...';
             submitBtn.disabled = true;
             
-            const question = document.getElementById('question').value.trim();
-            const penalty = document.getElementById('penalty').value.trim();
-            const deadline = document.getElementById('deadline').value;
-            const messageEl = document.getElementById('message');
+            const title = document.getElementById('gameTitle').value.trim();
+            const voteDuration = parseInt(document.getElementById('voteDuration').value, 10);
+            const questions = [];
+            const questionItems = document.querySelectorAll('.question-item');
+            
+            let allValid = true;
+            questionItems.forEach(item => {
+                const question = item.querySelector('.question').value.trim();
+                const penalty = item.querySelector('.penalty').value.trim();
+                if (question && penalty) {
+                    questions.push({ question, penalty });
+                } else {
+                    allValid = false;
+                }
+            });
 
-            if (!question || !penalty || !deadline) {
-                showMessage('모든 필드를 입력해주세요.');
+            if (!title || !voteDuration || !allValid || questions.length === 0) {
+                showMessage('방 제목, 투표 시간, 그리고 하나 이상의 질문과 벌칙을 모두 입력해주세요.');
                 resetButton();
                 return;
             }
@@ -164,12 +221,12 @@
                 const response = await fetch('/api/session/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question, penalty, deadline })
+                    body: JSON.stringify({ title, voteDuration, questions })
                 });
 
                 if (!response.ok) {
                     const err = await response.json();
-                    throw new Error(err.error || '세션 생성에 실패했습니다.');
+                    throw new Error(err.error || '게임 생성에 실패했습니다.');
                 }
 
                 const result = await response.json();
@@ -189,7 +246,7 @@
 
         function resetButton() {
             const submitBtn = document.getElementById('submitBtn');
-            submitBtn.innerHTML = '세션 생성 & QR 코드 보기';
+            submitBtn.innerHTML = '게임 방 생성하기';
             submitBtn.disabled = false;
         }
     </script>

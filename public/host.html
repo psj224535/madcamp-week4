@@ -7,277 +7,303 @@
     <style>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            padding: 1rem; 
-            margin: 0;
+            display: flex; flex-direction: column; align-items: center; 
+            padding: 1rem; margin: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        .container { 
-            display: flex; 
-            width: 100%; 
-            max-width: 1200px; 
-            gap: 2rem; 
-            flex-wrap: wrap;
-        }
-        .left-panel, .right-panel { 
-            flex: 1; 
-            min-width: 300px;
+            min-height: 100vh; color: #333;
         }
         .panel { 
             background: rgba(255, 255, 255, 0.95); 
-            padding: 1.5rem; 
-            border-radius: 16px; 
+            padding: 1.5rem; border-radius: 16px; 
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
+            width: 100%; max-width: 800px; margin-bottom: 1rem;
         }
-        h1, h2 { 
-            text-align: center; 
-            color: #333;
-            margin-bottom: 1.5rem;
-        }
-        #sessionQuestion { 
-            text-align: center; 
-            font-size: 1.3rem; 
-            color: #555; 
-            margin-top: 0; 
-            margin-bottom: 1.5rem;
-            font-weight: 600;
-        }
-        #qrCodeContainer { 
-            text-align: center; 
-        }
-        #qrCodeContainer img {
-            border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-        }
-        #voteStatus { 
-            text-align: center; 
-            font-size: 1.5rem; 
-            margin: 2rem 0; 
-        }
-        #voterCount { 
-            font-weight: bold; 
-            color: #667eea; 
-            font-size: 2rem;
-        }
+        h1, h2, h3 { text-align: center; margin-bottom: 1rem; }
+        .room-title { font-size: 2rem; color: white; margin-bottom: 1rem; }
+        
+        /* --- State-specific containers --- */
+        #waitingRoom, #votingRoom, #resultRoom, #gameFinishedRoom { display: none; }
+
+        /* --- Common Elements --- */
+        .qr-section { text-align: center; margin-bottom: 1rem; }
+        #qrCode { border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+        .participants-list { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .participants-list li { background: #eee; padding: 8px 12px; border-radius: 8px; }
+        .question-display { font-size: 1.5rem; font-weight: bold; margin: 1rem 0; }
+        .timer-display { font-size: 2.5rem; font-weight: bold; color: #dc3545; margin-bottom: 1rem; }
+        .voter-columns { display: flex; justify-content: space-around; text-align: center; }
+        .voter-columns h3 { margin-bottom: 0.5rem; }
+        .voter-columns ul { list-style: none; padding: 0; }
+        .button-group { display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem; }
         .action-button { 
-            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%); 
-            color: white; 
-            border: none; 
-            padding: 12px 24px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            margin-top: 1rem; 
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s;
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); 
+            color: white; border: none; padding: 15px 30px; 
+            border-radius: 8px; cursor: pointer; font-size: 18px;
+            font-weight: 600; transition: all 0.3s;
         }
-        .action-button:hover { 
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
-        }
-        .finalize-btn {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            font-size: 1.2rem;
-            padding: 15px 30px;
-            margin: 10px;
-            border-radius: 12px;
-        }
-        .finalize-btn:hover {
-            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
-        }
-        #finalizeSection { 
-            text-align: center; 
-            margin-top: 2rem; 
-            padding-top: 2rem; 
-            border-top: 2px solid #eee; 
-        }
-        #finalizeSection button:disabled { 
-            background: #ccc; 
-            cursor: not-allowed; 
-            transform: none;
-        }
-        .qr-instruction {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            color: #666;
-            font-size: 14px;
-        }
-        .status-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-        .status-active {
-            background: #28a745;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-        .message {
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 10px;
-            font-weight: 500;
-        }
-        .message.info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
+        .action-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4); }
+        .action-button:disabled { background: #ccc; cursor: not-allowed; }
+        .finalize-btn { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+        .end-early-btn { background: linear-gradient(135deg, #fd7e14 0%, #dc3545 100%); }
+        #message { text-align: center; margin-top: 1rem; padding: 10px; border-radius: 8px; font-weight: 500; display: none; }
+        .message.error { background: #f8d7da; color: #721c24; }
+        .message.info { background: #d1ecf1; color: #0c5460; }
     </style>
 </head>
 <body>
-    <h1>🎮 호스트 대시보드</h1>
+    <h1 id="gameTitle" class="room-title"></h1>
 
-    <div class="container">
-        <div class="left-panel panel">
-            <h2>📱 게임 접속 QR 코드</h2>
-            <div id="qrCodeContainer">
+    <!-- Waiting Room -->
+    <div id="waitingRoom" class="panel">
+        <h2>게임 시작 대기 중...</h2>
+        <div class="qr-section">
+            <p>참가자들이 아래 QR코드를 스캔하여 입장할 수 있습니다.</p>
                 <img id="qrCode" alt="QR Code" />
-            </div>
-            <div class="qr-instruction">
-                <p><strong>📋 사용 방법:</strong></p>
-                <p>1. 참가자들이 이 QR 코드를 스캔합니다</p>
-                <p>2. 닉네임을 입력하고 참가합니다</p>
-                <p>3. O 또는 X를 선택하여 투표합니다</p>
-            </div>
         </div>
-        <div class="right-panel panel">
-            <h2>📊 실시간 투표 현황</h2>
-            <h3 id="sessionQuestion"></h3>
-            <div id="voteStatus">
-                <p>
-                    <span class="status-indicator status-active"></span>
-                    현재 투표 완료 인원: <span id="voterCount">0</span>명
-                </p>
-                <button id="endVoteEarlyBtn" class="action-button">⏰ 투표 조기 종료</button>
-            </div>
-            <div id="finalizeSection" style="display: none;">
-                <h2>🎯 투표가 마감되었습니다!</h2>
-                <p>최종 선택을 하여 패자를 결정하세요.</p>
-                <button id="btnFinalizeO" class="finalize-btn" data-choice="O">⭕ O를 최종 선택</button>
-                <button id="btnFinalizeX" class="finalize-btn" data-choice="X">❌ X를 최종 선택</button>
-            </div>
-            <div id="message" class="message" style="display: none;"></div>
+        <h3>참가자 목록 (<span id="participantCount">0</span>명)</h3>
+        <ul id="participantList" class="participants-list"></ul>
+        <div class="button-group">
+            <button id="startGameBtn" class="action-button">🚀 게임 시작!</button>
         </div>
     </div>
+
+    <!-- Voting Room -->
+    <div id="votingRoom" class="panel">
+        <h2 id="questionHeader"></h2>
+        <p id="currentQuestion" class="question-display"></p>
+        <div id="timer" class="timer-display"></div>
+        <h3>실시간 투표 현황 (<span id="voteCount">0</span>명)</h3>
+        <div class="voter-columns">
+            <div>
+                <h3>⭕ O</h3>
+                <ul id="oVoters"></ul>
+            </div>
+            <div>
+                <h3>❌ X</h3>
+                <ul id="xVoters"></ul>
+            </div>
+        </div>
+        <div class="button-group">
+            <button id="endVoteEarlyBtn" class="action-button end-early-btn">⏰ 투표 조기 종료</button>
+        </div>
+    </div>
+
+    <!-- Result Room -->
+    <div id="resultRoom" class="panel">
+        <h2 id="resultHeader"></h2>
+        <p id="resultQuestion" class="question-display"></p>
+        <div class="voter-columns">
+            <div>
+                <h3>⭕ O (<span id="oResultCount">0</span>명)</h3>
+                <ul id="oResultList"></ul>
+            </div>
+            <div>
+                <h3>❌ X (<span id="xResultCount">0</span>명)</h3>
+                <ul id="xResultList"></ul>
+            </div>
+        </div>
+        <div id="finalizeSection">
+            <h3>패자를 결정하세요!</h3>
+            <div class="button-group">
+                <button class="action-button finalize-btn" data-choice="O">⭕ O를 최종 선택</button>
+                <button class="action-button finalize-btn" data-choice="X">❌ X를 최종 선택</button>
+            </div>
+        </div>
+        <div id="nextQuestionSection" style="display: none;">
+             <h3>벌칙: <span id="penaltyText"></span></h3>
+             <p><b id="loserCount">0</b>명의 패자가 결정되었습니다.</p>
+             <div class="button-group">
+                <button id="nextQuestionBtn" class="action-button">➡️ 다음 질문으로</button>
+             </div>
+        </div>
+    </div>
+    
+    <!-- Game Finished Room -->
+    <div id="gameFinishedRoom" class="panel">
+        <h2>🎉 게임 종료!</h2>
+        <p>모든 질문이 완료되었습니다. 수고하셨습니다!</p>
+        <div class="button-group">
+           <a href="/" class="action-button">새 게임 만들기</a>
+        </div>
+    </div>
+
+    <div id="message" class="message"></div>
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get('session');
 
-        function showMessage(text, type = 'info') {
-            const messageEl = document.getElementById('message');
-            messageEl.textContent = text;
-            messageEl.className = `message ${type}`;
-            messageEl.style.display = 'block';
-        }
-
-        function hideMessage() {
-            document.getElementById('message').style.display = 'none';
-        }
-
-        const updateVoteCount = (voters) => {
-            const totalVotes = voters.O.length + voters.X.length;
-            document.getElementById('voterCount').textContent = totalVotes;
+        const DOMElements = {
+            gameTitle: document.getElementById('gameTitle'),
+            qrCode: document.getElementById('qrCode'),
+            message: document.getElementById('message'),
+            // Rooms
+            waitingRoom: document.getElementById('waitingRoom'),
+            votingRoom: document.getElementById('votingRoom'),
+            resultRoom: document.getElementById('resultRoom'),
+            gameFinishedRoom: document.getElementById('gameFinishedRoom'),
+            // Waiting Room
+            participantCount: document.getElementById('participantCount'),
+            participantList: document.getElementById('participantList'),
+            startGameBtn: document.getElementById('startGameBtn'),
+            // Voting Room
+            questionHeader: document.getElementById('questionHeader'),
+            currentQuestion: document.getElementById('currentQuestion'),
+            timer: document.getElementById('timer'),
+            voteCount: document.getElementById('voteCount'),
+            oVoters: document.getElementById('oVoters'),
+            xVoters: document.getElementById('xVoters'),
+            endVoteEarlyBtn: document.getElementById('endVoteEarlyBtn'),
+            // Result Room
+            resultHeader: document.getElementById('resultHeader'),
+            resultQuestion: document.getElementById('resultQuestion'),
+            oResultCount: document.getElementById('oResultCount'),
+            oResultList: document.getElementById('oResultList'),
+            xResultCount: document.getElementById('xResultCount'),
+            xResultList: document.getElementById('xResultList'),
+            finalizeSection: document.getElementById('finalizeSection'),
+            nextQuestionSection: document.getElementById('nextQuestionSection'),
+            penaltyText: document.getElementById('penaltyText'),
+            loserCount: document.getElementById('loserCount'),
+            nextQuestionBtn: document.getElementById('nextQuestionBtn'),
         };
+
+        let statusInterval, timerInterval;
+
+        function showMessage(text, type = 'error') {
+            DOMElements.message.textContent = text;
+            DOMElements.message.className = `message ${type}`;
+            DOMElements.message.style.display = 'block';
+        }
+
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            try {
+                const options = { method, headers: { 'Content-Type': 'application/json' } };
+                if (body) options.body = JSON.stringify(body);
+                const response = await fetch(`/api/session/${sessionId}/${endpoint}`, options);
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'API 요청 실패');
+                }
+                return await response.json();
+            } catch (error) {
+                showMessage(error.message);
+                return null;
+            }
+        }
+
+        function updateParticipants(participants = []) {
+            DOMElements.participantCount.textContent = participants.length;
+            DOMElements.participantList.innerHTML = participants.map(p => `<li>${p}</li>`).join('');
+        }
         
-        const checkStatus = async () => {
+        function updateVoters(voters) {
+            const oVoterList = voters.O || [];
+            const xVoterList = voters.X || [];
+            DOMElements.voteCount.textContent = oVoterList.length + xVoterList.length;
+            DOMElements.oVoters.innerHTML = oVoterList.map(v => `<li>${v}</li>`).join('');
+            DOMElements.xVoters.innerHTML = xVoterList.map(v => `<li>${v}</li>`).join('');
+        }
+
+        async function updateTimer() {
+            const data = await apiCall('time');
+            if (data) {
+                if (data.remainingTime > 0) {
+                    DOMElements.timer.textContent = data.remainingTime;
+                } else {
+                    DOMElements.timer.textContent = "0";
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    updateStatus(); // Update status immediately when timer ends
+                }
+            }
+        }
+        
+        function switchRoom(room) {
+            ['waitingRoom', 'votingRoom', 'resultRoom', 'gameFinishedRoom'].forEach(r => {
+                DOMElements[r].style.display = 'none';
+            });
+            if (DOMElements[room]) {
+                DOMElements[room].style.display = 'block';
+            }
+        }
+
+        async function updateStatus() {
+            const data = await apiCall('result');
+            if (!data) return;
+
+            DOMElements.gameTitle.textContent = data.title;
+
+            if (data.gameState === 'waiting') {
+                switchRoom('waitingRoom');
+                updateParticipants(data.participants);
+            } else if (data.gameState === 'voting') {
+                switchRoom('votingRoom');
+                const qIndex = data.currentQuestionIndex;
+                DOMElements.questionHeader.textContent = `질문 ${qIndex + 1} / ${data.totalQuestions}`;
+                DOMElements.currentQuestion.textContent = data.question;
+                updateVoters(data.voters);
+                if (!timerInterval) {
+                    updateTimer(); // Initial call
+                    timerInterval = setInterval(updateTimer, 1000);
+                }
+            } else if (data.gameState === 'result') {
+                switchRoom('resultRoom');
+                const qIndex = data.currentQuestionIndex;
+                const penalty = data.penalty;
+                DOMElements.resultHeader.textContent = `질문 ${qIndex + 1} 결과`;
+                DOMElements.resultQuestion.textContent = data.question;
+
+                const oVoters = data.voters.O || [];
+                const xVoters = data.voters.X || [];
+                DOMElements.oResultCount.textContent = oVoters.length;
+                DOMElements.xResultCount.textContent = xVoters.length;
+                DOMElements.oResultList.innerHTML = oVoters.map(v => `<li>${v}</li>`).join('');
+                DOMElements.xResultList.innerHTML = xVoters.map(v => `<li>${v}</li>`).join('');
+
+                if (data.isFinalized) {
+                    DOMElements.finalizeSection.style.display = 'none';
+                    DOMElements.nextQuestionSection.style.display = 'block';
+                    const losers = data.finalChoice === 'O' ? xVoters : oVoters;
+                    DOMElements.penaltyText.textContent = penalty;
+                    DOMElements.loserCount.textContent = losers.length;
+
+                    if (qIndex + 1 >= data.totalQuestions) {
+                         DOMElements.nextQuestionBtn.textContent = '🏆 최종 결과 보기';
+                    } else {
+                        DOMElements.nextQuestionBtn.textContent = `➡️ 다음 질문으로 (${qIndex + 2}/${data.totalQuestions})`;
+                    }
+                } else {
+                    DOMElements.finalizeSection.style.display = 'block';
+                    DOMElements.nextQuestionSection.style.display = 'none';
+                }
+
+            } else if (data.gameState === 'finished') {
+                switchRoom('gameFinishedRoom');
+                clearInterval(statusInterval);
+            }
+        }
+
+        window.onload = () => {
             if (!sessionId) {
                 document.body.innerHTML = '<h1>❌ 오류: 세션 ID를 찾을 수 없습니다.</h1>';
                 return;
             }
-            try {
-                const response = await fetch(`/api/session/${sessionId}/result`);
-                const result = await response.json();
-
-                if (result.isFinalized) {
-                    window.location.href = `/result.html?session=${sessionId}`;
-                    return;
-                }
-                
-                document.getElementById('sessionQuestion').textContent = `Q: ${result.question}`;
-                updateVoteCount(result.voters);
-                
-                if (result.isFinished) {
-                    document.getElementById('voteStatus').style.display = 'none';
-                    document.getElementById('finalizeSection').style.display = 'block';
-                    hideMessage();
-                } else {
-                    document.getElementById('voteStatus').style.display = 'block';
-                    document.getElementById('finalizeSection').style.display = 'none';
-                    showMessage('투표가 진행 중입니다...', 'info');
-                }
-
-            } catch (error) {
-                console.error("Error checking session status:", error);
-                showMessage('서버 연결 오류가 발생했습니다.', 'error');
-            }
-        };
-
-        window.onload = () => {
-            document.getElementById('qrCode').src = `/api/session/${sessionId}/qr`;
+            DOMElements.qrCode.src = `/api/session/${sessionId}/qr`;
             
-            // Initial check and then set interval
-            checkStatus();
-            setInterval(checkStatus, 2000); // Check every 2 seconds
-
-            document.getElementById('endVoteEarlyBtn').addEventListener('click', async () => {
-                if (confirm('정말로 투표를 조기 종료하시겠습니까?')) {
-                    try {
-                        const response = await fetch(`/api/session/${sessionId}/end`, { method: 'POST' });
-                        if (response.ok) {
-                            showMessage('투표가 조기 종료되었습니다.', 'info');
-                            checkStatus(); // 즉시 상태 업데이트
-                        } else {
-                            showMessage('투표 종료 중 오류가 발생했습니다.', 'error');
-                        }
-                    } catch (error) {
-                        showMessage('네트워크 오류가 발생했습니다.', 'error');
-                    }
+            DOMElements.startGameBtn.addEventListener('click', () => apiCall('next', 'POST').then(updateStatus));
+            DOMElements.endVoteEarlyBtn.addEventListener('click', () => apiCall('end', 'POST').then(updateStatus));
+            DOMElements.nextQuestionBtn.addEventListener('click', () => apiCall('next', 'POST').then(updateStatus));
+            
+            DOMElements.finalizeSection.addEventListener('click', (e) => {
+                if (e.target.classList.contains('finalize-btn')) {
+                    const choice = e.target.dataset.choice;
+                    apiCall('finalize', 'POST', { choice }).then(updateStatus);
                 }
             });
 
-            document.getElementById('btnFinalizeO').addEventListener('click', async () => {
-                await finalizeChoice('O');
-            });
-
-            document.getElementById('btnFinalizeX').addEventListener('click', async () => {
-                await finalizeChoice('X');
-            });
-        };
-
-        const finalizeChoice = async (choice) => {
-            try {
-                const response = await fetch(`/api/session/${sessionId}/finalize`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ choice: choice })
-                });
-
-                if (response.ok) {
-                    showMessage(`${choice}를 최종 선택했습니다!`, 'info');
-                    setTimeout(() => {
-                        window.location.href = `/result.html?session=${sessionId}`;
-                    }, 2000);
-                } else {
-                    const result = await response.json();
-                    showMessage(`오류: ${result.error}`, 'error');
-                }
-            } catch (error) {
-                showMessage('네트워크 오류가 발생했습니다.', 'error');
-            }
+            updateStatus();
+            statusInterval = setInterval(updateStatus, 1500);
         };
     </script>
 </body>
